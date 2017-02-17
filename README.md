@@ -6,11 +6,10 @@ Developed by Blockchain Source GmbH
 
 # Done
 
-* Nothing
+* Byte-level serialization format
 
 # To do
 
-* Byte-level serialization format
 * Timestamp parsing
 * Timestamp verification
 * Timestamp creation
