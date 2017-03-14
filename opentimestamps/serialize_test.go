@@ -144,4 +144,10 @@ func TestReadWrite(t *testing.T) {
 		// fails because of in-between 0x00
 		assert.Error(t, d.assertMagic(magic))
 	}
+	{
+		// read leftover byte
+		_, err := d.readByte()
+		assert.NoError(t, err)
+		assert.True(t, d.assertEOF())
+	}
 }

@@ -188,6 +188,15 @@ func (d deserializationContext) assertMagic(expected []byte) error {
 	return nil
 }
 
+// assertEOF reads a byte and returns true if the end of the reader is reached.
+// Careful: the read operation is a side-effect.
+func (d deserializationContext) assertEOF() bool {
+	// Unfortunately we can't always do a zero-byte read here, since some
+	// reader implementations fail to return EOF. This means assertEOF
+	_, err := d.readByte()
+	return err == io.EOF
+}
+
 // newDeserializationContext returns a deserializationContext for a reader
 func newDeserializationContext(r io.Reader) *deserializationContext {
 	// TODO
