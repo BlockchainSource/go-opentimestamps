@@ -97,7 +97,7 @@ func (d deserializationContext) readBytes(n int) ([]byte, error) {
 		return b, err
 	}
 	if n != m {
-		return b, fmt.Errorf("expected %d bytes, got %d", m, n)
+		return b, fmt.Errorf("expected %d bytes, got %d", n, m)
 	}
 	return b[:], nil
 }
