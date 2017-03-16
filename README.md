@@ -7,10 +7,10 @@ Developed by Blockchain Source GmbH
 # Done
 
 * Byte-level serialization format
+* Timestamp parsing
 
 # To do
 
-* Timestamp parsing
 * Timestamp verification
 * Timestamp creation
 * OpenTimestamps-Server support
