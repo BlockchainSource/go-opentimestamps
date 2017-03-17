@@ -7,6 +7,14 @@ import (
 	"strings"
 )
 
+type dumpConfig struct {
+	showMessage bool
+}
+
+var defaultDumpConfig dumpConfig = dumpConfig{
+	showMessage: true,
+}
+
 // A timestampLink with the opCode being the link edge. The reference
 // implementation uses a map, but the implementation is a bit complex. A list
 // should work as well.
@@ -22,30 +30,37 @@ type Timestamp struct {
 	ops          []tsLink
 }
 
-func (t *Timestamp) DumpIndent(w io.Writer, indent int) {
+func (t *Timestamp) DumpIndent(w io.Writer, indent int, cfg dumpConfig) {
+	if cfg.showMessage {
+		fmt.Fprintf(w, strings.Repeat(" ", indent))
+		fmt.Fprintf(w, "message %x\n", t.message)
+	}
 	for _, att := range t.attestations {
 		fmt.Fprint(w, strings.Repeat(" ", indent))
 		fmt.Fprintln(w, att)
 	}
 
 	// if the timestamp is indeed tree-shaped, show it like that
-	nextIndent := indent
 	if len(t.ops) > 1 {
-		nextIndent += 1
+		indent += 1
 	}
 
 	for _, tsLink := range t.ops {
 		fmt.Fprint(w, strings.Repeat(" ", indent))
 		fmt.Fprintln(w, tsLink.opCode)
 		fmt.Fprint(w, strings.Repeat(" ", indent))
-		tsLink.timestamp.DumpIndent(w, nextIndent)
+		tsLink.timestamp.DumpIndent(w, indent, cfg)
 	}
 }
 
-func (t *Timestamp) Dump() string {
+func (t *Timestamp) DumpWithConfig(cfg dumpConfig) string {
 	b := &bytes.Buffer{}
-	t.DumpIndent(b, 0)
+	t.DumpIndent(b, 0, cfg)
 	return b.String()
+}
+
+func (t *Timestamp) Dump() string {
+	return t.DumpWithConfig(defaultDumpConfig)
 }
 
 func parseTagOrAttestation(
