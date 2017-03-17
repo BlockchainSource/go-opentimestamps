@@ -70,7 +70,7 @@ func parseTagOrAttestation(
 		if err != nil {
 			return err
 		}
-		nextTs := &Timestamp{}
+		nextTs := &Timestamp{message: newMessage}
 		err = parse(nextTs, ctx, newMessage, limit-1)
 		if err != nil {
 			return err
