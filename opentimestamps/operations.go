@@ -1,11 +1,70 @@
 package opentimestamps
 
-import "fmt"
+import (
+	"crypto/sha1"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+
+	"golang.org/x/crypto/ripemd160"
+)
 
 const maxResultLength = 4096
 
 type unaryStackOp func(message []byte) ([]byte, error)
 type binaryStackOp func(message, argument []byte) ([]byte, error)
+
+// opAppend returns the concatenation of msg and arg
+func opAppend(msg, arg []byte) (res []byte, err error) {
+	res = append(res, msg...)
+	res = append(res, arg...)
+	return
+}
+
+// opPrepend returns the concatenation of arg and msg
+func opPrepend(msg, arg []byte) (res []byte, err error) {
+	res = append(res, arg...)
+	res = append(res, msg...)
+	return
+}
+
+// opReverse returns the reversed msg. Deprecated.
+func opReverse(msg []byte) ([]byte, error) {
+	if len(msg) == 0 {
+		return nil, fmt.Errorf("empty input invalid for opReverse")
+	}
+	res := make([]byte, len(msg))
+	for i, b := range msg {
+		res[len(res)-i-1] = b
+	}
+	return res, nil
+}
+
+func opHexlify(msg []byte) ([]byte, error) {
+	if len(msg) == 0 {
+		return nil, fmt.Errorf("empty input invalid for opHexlify")
+	}
+	return []byte(hex.EncodeToString(msg)), nil
+}
+
+func opSHA1(msg []byte) ([]byte, error) {
+	res := sha1.Sum(msg)
+	return res[:], nil
+}
+
+func opRIPEMD160(msg []byte) ([]byte, error) {
+	h := ripemd160.New()
+	_, err := h.Write(msg)
+	if err != nil {
+		return nil, err
+	}
+	return h.Sum([]byte{}), nil
+}
+
+func opSHA256(msg []byte) ([]byte, error) {
+	res := sha256.Sum256(msg)
+	return res[:], nil
+}
 
 type opCode interface {
 	match(byte) bool
@@ -48,8 +107,6 @@ func (u *unaryOp) encode() error {
 func (u *unaryOp) apply(message []byte) ([]byte, error) {
 	return u.stackOp(message)
 }
-
-func noop([]byte) ([]byte, error) { return nil, nil }
 
 // Crypto operations
 // These are hash ops that define a digest length
@@ -114,17 +171,14 @@ func (b *binaryOp) String() string {
 	return fmt.Sprintf("%s %x", b.name, b.argument)
 }
 
-func opAppend(msg, arg []byte) ([]byte, error)  { return nil, nil }
-func opPrepend(msg, arg []byte) ([]byte, error) { return nil, nil }
-
 var opCodes []opCode = []opCode{
 	newBinaryOp(0xf0, "APPEND", opAppend),
 	newBinaryOp(0xf1, "PREPEND", opPrepend),
-	newUnaryOp(0xf2, "REVERSE", noop),
-	newUnaryOp(0xf3, "HEXLIFY", noop),
-	newCryptOp(0x02, "SHA1", noop, 20),
-	newCryptOp(0x03, "RIPEMD160", noop, 20),
-	newCryptOp(0x08, "SHA256", noop, 32),
+	newUnaryOp(0xf2, "REVERSE", opReverse),
+	newUnaryOp(0xf3, "HEXLIFY", opHexlify),
+	newCryptOp(0x02, "SHA1", opSHA1, 20),
+	newCryptOp(0x03, "RIPEMD160", opRIPEMD160, 20),
+	newCryptOp(0x08, "SHA256", opSHA256, 32),
 }
 
 func parseOp(ctx *deserializationContext, tag byte) (opCode, error) {
