@@ -154,6 +154,9 @@ func (b *binaryOp) decode(ctx *deserializationContext) (opCode, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(arg) == 0 {
+		return nil, fmt.Errorf("empty argument invalid for binaryOp")
+	}
 	ret := *b
 	ret.argument = arg
 	return &ret, nil
