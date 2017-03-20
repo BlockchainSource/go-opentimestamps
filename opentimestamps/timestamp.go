@@ -26,7 +26,7 @@ type tsLink struct {
 // A Timestamp can contain many attestations and operations.
 type Timestamp struct {
 	Message      []byte
-	Attestations []attestation
+	Attestations []Attestation
 	ops          []tsLink
 }
 

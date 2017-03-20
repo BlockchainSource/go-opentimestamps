@@ -16,9 +16,9 @@ var (
 	pendingAttestationTag = mustDecodeHex("83dfe30d2ef90c8e")
 )
 
-type attestation interface {
+type Attestation interface {
 	match(tag []byte) bool
-	decode(*deserializationContext) (attestation, error)
+	decode(*deserializationContext) (Attestation, error)
 }
 
 type baseAttestation struct {
@@ -46,7 +46,7 @@ func (p *pendingAttestation) match(tag []byte) bool {
 
 func (p *pendingAttestation) decode(
 	ctx *deserializationContext,
-) (attestation, error) {
+) (Attestation, error) {
 	uri, err := ctx.readVarBytes(0, pendingAttestationMaxUriLength)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (b *bitcoinAttestation) match(tag []byte) bool {
 
 func (b *bitcoinAttestation) decode(
 	ctx *deserializationContext,
-) (attestation, error) {
+) (Attestation, error) {
 	height, err := ctx.readVarUint()
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func (u unknownAttestation) match(tag []byte) bool {
 	panic("not implemented")
 }
 
-func (u unknownAttestation) decode(*deserializationContext) (attestation, error) {
+func (u unknownAttestation) decode(*deserializationContext) (Attestation, error) {
 	panic("not implemented")
 }
 
@@ -110,12 +110,12 @@ func (u unknownAttestation) String() string {
 	return fmt.Sprintf("UnknownAttestation(bytes=%q)", u.bytes)
 }
 
-var attestations []attestation = []attestation{
+var attestations []Attestation = []Attestation{
 	newPendingAttestation(),
 	newBitcoinAttestation(),
 }
 
-func ParseAttestation(ctx *deserializationContext) (attestation, error) {
+func ParseAttestation(ctx *deserializationContext) (Attestation, error) {
 	tag, err := ctx.readBytes(attestationTagSize)
 	if err != nil {
 		return nil, err
