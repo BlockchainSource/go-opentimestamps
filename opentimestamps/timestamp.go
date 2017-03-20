@@ -30,6 +30,15 @@ type Timestamp struct {
 	ops          []tsLink
 }
 
+// Walk calls the passed function f for this timestamp and all
+// downstream timestamps that are chained via operations.
+func (t *Timestamp) Walk(f func(t *Timestamp)) {
+	f(t)
+	for _, l := range t.ops {
+		l.timestamp.Walk(f)
+	}
+}
+
 func (t *Timestamp) DumpIndent(w io.Writer, indent int, cfg dumpConfig) {
 	if cfg.showMessage {
 		fmt.Fprintf(w, strings.Repeat(" ", indent))
