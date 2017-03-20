@@ -92,6 +92,23 @@ func (b *BitcoinAttestation) decode(
 	return &ret, nil
 }
 
+const hashMerkleRootSize = 32
+
+func (b *BitcoinAttestation) VerifyAgainstBlockHash(
+	digest, blockHash []byte,
+) error {
+	if len(digest) != hashMerkleRootSize {
+		return fmt.Errorf("invalid digest size %d", len(digest))
+	}
+	if !bytes.Equal(digest, blockHash) {
+		return fmt.Errorf(
+			"hash mismatch digest=%x blockHash=%x",
+			digest, blockHash,
+		)
+	}
+	return nil
+}
+
 // This is a catch-all for when we don't know how to parse it
 type unknownAttestation struct {
 	tag   []byte
