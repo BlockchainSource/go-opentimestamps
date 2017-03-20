@@ -25,17 +25,17 @@ type tsLink struct {
 
 // A Timestamp can contain many attestations and operations.
 type Timestamp struct {
-	message      []byte
-	attestations []attestation
+	Message      []byte
+	Attestations []attestation
 	ops          []tsLink
 }
 
 func (t *Timestamp) DumpIndent(w io.Writer, indent int, cfg dumpConfig) {
 	if cfg.showMessage {
 		fmt.Fprintf(w, strings.Repeat(" ", indent))
-		fmt.Fprintf(w, "message %x\n", t.message)
+		fmt.Fprintf(w, "message %x\n", t.Message)
 	}
-	for _, att := range t.attestations {
+	for _, att := range t.Attestations {
 		fmt.Fprint(w, strings.Repeat(" ", indent))
 		fmt.Fprintln(w, att)
 	}
@@ -75,7 +75,7 @@ func parseTagOrAttestation(
 		if err != nil {
 			return err
 		}
-		ts.attestations = append(ts.attestations, a)
+		ts.Attestations = append(ts.Attestations, a)
 	} else {
 		op, err := parseOp(ctx, tag)
 		if err != nil {
@@ -85,7 +85,7 @@ func parseTagOrAttestation(
 		if err != nil {
 			return err
 		}
-		nextTs := &Timestamp{message: newMessage}
+		nextTs := &Timestamp{Message: newMessage}
 		err = parse(nextTs, ctx, newMessage, limit-1)
 		if err != nil {
 			return err
@@ -129,7 +129,7 @@ func newTimestampFromContext(
 	ctx *deserializationContext, message []byte,
 ) (*Timestamp, error) {
 	recursionLimit := 1000
-	ts := &Timestamp{message: message}
+	ts := &Timestamp{Message: message}
 	err := parse(ts, ctx, message, recursionLimit)
 	if err != nil {
 		return nil, err

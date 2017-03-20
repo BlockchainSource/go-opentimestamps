@@ -23,7 +23,7 @@ type DetachedTimestamp struct {
 func (d *DetachedTimestamp) Dump() string {
 	w := &bytes.Buffer{}
 	fmt.Fprintf(
-		w, "File %s hash: %x\n", d.HashOp.name, d.Timestamp.message,
+		w, "File %s hash: %x\n", d.HashOp.name, d.Timestamp.Message,
 	)
 	fmt.Fprint(w, d.Timestamp.Dump())
 	return w.String()
