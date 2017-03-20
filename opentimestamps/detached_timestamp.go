@@ -15,12 +15,12 @@ const minFileDigestLength = 20
 const maxFileDigestLength = 32
 const fileMajorVersion = 1
 
-type DetachedTimestampFile struct {
+type DetachedTimestamp struct {
 	HashOp    cryptOp
 	Timestamp Timestamp
 }
 
-func (d *DetachedTimestampFile) Dump() string {
+func (d *DetachedTimestamp) Dump() string {
 	w := &bytes.Buffer{}
 	fmt.Fprintf(
 		w, "File %s hash: %x\n", d.HashOp.name, d.Timestamp.message,
@@ -29,7 +29,7 @@ func (d *DetachedTimestampFile) Dump() string {
 	return w.String()
 }
 
-func NewDetachedTimestamp(r io.Reader) (*DetachedTimestampFile, error) {
+func NewDetachedTimestamp(r io.Reader) (*DetachedTimestamp, error) {
 	ctx := newDeserializationContext(r)
 	if err := ctx.assertMagic([]byte(fileHeaderMagic)); err != nil {
 		return nil, err
@@ -53,12 +53,12 @@ func NewDetachedTimestamp(r io.Reader) (*DetachedTimestampFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DetachedTimestampFile{
+	return &DetachedTimestamp{
 		*fileHashOp, *ts,
 	}, nil
 }
 
-func NewDetachedTimestampFromPath(p string) (*DetachedTimestampFile, error) {
+func NewDetachedTimestampFromPath(p string) (*DetachedTimestamp, error) {
 	f, err := os.Open(p)
 	if err != nil {
 		return nil, err
