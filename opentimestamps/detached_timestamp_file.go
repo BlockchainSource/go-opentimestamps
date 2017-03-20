@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 )
 
 var fileHeaderMagic = []byte(
@@ -28,7 +29,7 @@ func (d *DetachedTimestampFile) Dump() string {
 	return w.String()
 }
 
-func NewDetachedTimestampFile(r io.Reader) (*DetachedTimestampFile, error) {
+func NewDetachedTimestamp(r io.Reader) (*DetachedTimestampFile, error) {
 	ctx := newDeserializationContext(r)
 	if err := ctx.assertMagic([]byte(fileHeaderMagic)); err != nil {
 		return nil, err
@@ -55,4 +56,12 @@ func NewDetachedTimestampFile(r io.Reader) (*DetachedTimestampFile, error) {
 	return &DetachedTimestampFile{
 		*fileHashOp, *ts,
 	}, nil
+}
+
+func NewDetachedTimestampFromPath(p string) (*DetachedTimestampFile, error) {
+	f, err := os.Open(p)
+	if err != nil {
+		return nil, err
+	}
+	return NewDetachedTimestamp(f)
 }

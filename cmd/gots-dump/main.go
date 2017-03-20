@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/BlockchainSource/go-opentimestamps/opentimestamps"
 )
@@ -12,15 +11,10 @@ import (
 func main() {
 	flag.Parse()
 	path := flag.Arg(0)
-	f, err := os.Open(path)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-
-	ts, err := opentimestamps.NewDetachedTimestampFile(f)
+	ts, err := opentimestamps.NewDetachedTimestampFromPath(path)
 	if err != nil {
 		log.Fatalf(
-			"error decoding detached timestamp %s: %v",
+			"error reading detached timestamp %s: %v",
 			path, err,
 		)
 	}
