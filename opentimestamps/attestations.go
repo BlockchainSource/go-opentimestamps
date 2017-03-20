@@ -61,26 +61,26 @@ func (p *pendingAttestation) String() string {
 	return fmt.Sprintf("VERIFY PendingAttestation(url=%s)", p.uri)
 }
 
-type bitcoinAttestation struct {
+type BitcoinAttestation struct {
 	baseAttestation
 	height uint64
 }
 
-func newBitcoinAttestation() *bitcoinAttestation {
-	return &bitcoinAttestation{
+func newBitcoinAttestation() *BitcoinAttestation {
+	return &BitcoinAttestation{
 		baseAttestation: baseAttestation{bitcoinAttestationTag},
 	}
 }
 
-func (b *bitcoinAttestation) String() string {
+func (b *BitcoinAttestation) String() string {
 	return fmt.Sprintf("VERIFY BitcoinAttestation(height=%d)", b.height)
 }
 
-func (b *bitcoinAttestation) match(tag []byte) bool {
+func (b *BitcoinAttestation) match(tag []byte) bool {
 	return b.baseAttestation.match(tag)
 }
 
-func (b *bitcoinAttestation) decode(
+func (b *BitcoinAttestation) decode(
 	ctx *deserializationContext,
 ) (Attestation, error) {
 	height, err := ctx.readVarUint()
