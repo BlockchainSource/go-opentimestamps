@@ -63,7 +63,7 @@ func (p *pendingAttestation) String() string {
 
 type BitcoinAttestation struct {
 	baseAttestation
-	height uint64
+	Height uint64
 }
 
 func newBitcoinAttestation() *BitcoinAttestation {
@@ -73,7 +73,7 @@ func newBitcoinAttestation() *BitcoinAttestation {
 }
 
 func (b *BitcoinAttestation) String() string {
-	return fmt.Sprintf("VERIFY BitcoinAttestation(height=%d)", b.height)
+	return fmt.Sprintf("VERIFY BitcoinAttestation(height=%d)", b.Height)
 }
 
 func (b *BitcoinAttestation) match(tag []byte) bool {
@@ -88,7 +88,7 @@ func (b *BitcoinAttestation) decode(
 		return nil, err
 	}
 	ret := *b
-	ret.height = height
+	ret.Height = height
 	return &ret, nil
 }
 
