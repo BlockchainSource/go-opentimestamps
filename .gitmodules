@@ -1,3 +1,30 @@
 [submodule "vendor/github.com/stretchr/testify"]
 	path = vendor/github.com/stretchr/testify
 	url = https://github.com/stretchr/testify
+[submodule "vendor/golang.org/x/crypto"]
+	path = vendor/golang.org/x/crypto
+	url = https://go.googlesource.com/crypto
+[submodule "vendor/github.com/btcsuite/btcrpcclient"]
+	path = vendor/github.com/btcsuite/btcrpcclient
+	url = https://github.com/btcsuite/btcrpcclient
+[submodule "vendor/github.com/btcsuite/btcd"]
+	path = vendor/github.com/btcsuite/btcd
+	url = https://github.com/btcsuite/btcd
+[submodule "vendor/github.com/btcsuite/btclog"]
+	path = vendor/github.com/btcsuite/btclog
+	url = https://github.com/btcsuite/btclog
+[submodule "vendor/github.com/btcsuite/seelog"]
+	path = vendor/github.com/btcsuite/seelog
+	url = https://github.com/btcsuite/seelog
+[submodule "vendor/github.com/btcsuite/btcutil"]
+	path = vendor/github.com/btcsuite/btcutil
+	url = https://github.com/btcsuite/btcutil
+[submodule "vendor/github.com/btcsuite/golangcrypto"]
+	path = vendor/github.com/btcsuite/golangcrypto
+	url = https://github.com/btcsuite/golangcrypto
+[submodule "vendor/github.com/btcsuite/go-socks"]
+	path = vendor/github.com/btcsuite/go-socks
+	url = https://github.com/btcsuite/go-socks
+[submodule "vendor/github.com/btcsuite/websocket"]
+	path = vendor/github.com/btcsuite/websocket
+	url = https://github.com/btcsuite/websocket
