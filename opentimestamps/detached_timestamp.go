@@ -17,7 +17,7 @@ const fileMajorVersion = 1
 
 type DetachedTimestamp struct {
 	HashOp    cryptOp
-	Timestamp Timestamp
+	Timestamp *Timestamp
 }
 
 func (d *DetachedTimestamp) Dump() string {
@@ -54,7 +54,7 @@ func NewDetachedTimestamp(r io.Reader) (*DetachedTimestamp, error) {
 		return nil, err
 	}
 	return &DetachedTimestamp{
-		*fileHashOp, *ts,
+		*fileHashOp, ts,
 	}, nil
 }
 
