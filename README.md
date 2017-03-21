@@ -8,10 +8,11 @@ Developed by Blockchain Source GmbH
 
 * Byte-level serialization format
 * Timestamp parsing
+* Bitcoin Timestamp verification
 
 # To do
 
-* Timestamp verification
+* Pending Timestamp verification
 * Timestamp creation
 * OpenTimestamps-Server support
 * CLI tools
