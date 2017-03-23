@@ -1,6 +1,7 @@
 package opentimestamps
 
 import (
+	"bytes"
 	"encoding/hex"
 	"path/filepath"
 	"testing"
@@ -14,6 +15,17 @@ func examplePaths() []string {
 		panic(err)
 	}
 	return matches
+}
+
+func containsUnknownAttestation(ts *Timestamp) (res bool) {
+	ts.Walk(func(subTs *Timestamp) {
+		for _, att := range subTs.Attestations {
+			if _, ok := att.(unknownAttestation); ok {
+				res = true
+			}
+		}
+	})
+	return
 }
 
 func TestDecodeHelloWorld(t *testing.T) {
@@ -50,9 +62,29 @@ func TestDecodeHelloWorld(t *testing.T) {
 	assert.Equal(t, 1, attCount)
 }
 
-func TestDecodeAll(t *testing.T) {
+func TestDecodeEncodeAll(t *testing.T) {
 	for _, path := range examplePaths() {
-		_, err := NewDetachedTimestampFromPath(path)
-		assert.NoError(t, err)
+		t.Log(path)
+		dts, err := NewDetachedTimestampFromPath(path)
+		assert.NoError(t, err, path)
+
+		if containsUnknownAttestation(dts.Timestamp) {
+			t.Logf("skipping encode cycle: unknownAttestation")
+			continue
+		}
+
+		buf := &bytes.Buffer{}
+		err = dts.Timestamp.encode(&serializationContext{buf})
+		if !assert.NoError(t, err, path) {
+			continue
+		}
+
+		buf = bytes.NewBuffer(buf.Bytes())
+		_, err = NewTimestampFromReader(buf, dts.Timestamp.Message)
+		if !assert.NoError(t, err, path) {
+			continue
+		}
+
+		t.Log("encode cycle success")
 	}
 }

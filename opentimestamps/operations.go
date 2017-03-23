@@ -69,7 +69,7 @@ func opSHA256(msg []byte) ([]byte, error) {
 type opCode interface {
 	match(byte) bool
 	decode(*deserializationContext) (opCode, error)
-	encode() error
+	encode(*serializationContext) error
 	apply(message []byte) ([]byte, error)
 }
 
@@ -100,8 +100,8 @@ func (u *unaryOp) decode(ctx *deserializationContext) (opCode, error) {
 	return &ret, nil
 }
 
-func (u *unaryOp) encode() error {
-	panic("not implemented")
+func (u *unaryOp) encode(ctx *serializationContext) error {
+	return ctx.writeByte(u.tag)
 }
 
 func (u *unaryOp) apply(message []byte) ([]byte, error) {
@@ -162,8 +162,11 @@ func (b *binaryOp) decode(ctx *deserializationContext) (opCode, error) {
 	return &ret, nil
 }
 
-func (b *binaryOp) encode() error {
-	panic("not implemented")
+func (b *binaryOp) encode(ctx *serializationContext) error {
+	if err := ctx.writeByte(b.tag); err != nil {
+		return err
+	}
+	return ctx.writeVarBytes(b.argument)
 }
 
 func (b *binaryOp) apply(message []byte) ([]byte, error) {

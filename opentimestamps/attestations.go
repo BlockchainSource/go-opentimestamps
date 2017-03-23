@@ -17,16 +17,17 @@ var (
 )
 
 type Attestation interface {
-	match(tag []byte) bool
+	tag() []byte
 	decode(*deserializationContext) (Attestation, error)
+	encode(*serializationContext) error
 }
 
 type baseAttestation struct {
-	tag []byte
+	fixedTag []byte
 }
 
-func (b *baseAttestation) match(tag []byte) bool {
-	return bytes.Equal(b.tag, tag)
+func (b *baseAttestation) tag() []byte {
+	return b.fixedTag
 }
 
 type pendingAttestation struct {
@@ -36,12 +37,10 @@ type pendingAttestation struct {
 
 func newPendingAttestation() *pendingAttestation {
 	return &pendingAttestation{
-		baseAttestation: baseAttestation{tag: pendingAttestationTag},
+		baseAttestation: baseAttestation{
+			fixedTag: pendingAttestationTag,
+		},
 	}
-}
-
-func (p *pendingAttestation) match(tag []byte) bool {
-	return p.baseAttestation.match(tag)
 }
 
 func (p *pendingAttestation) decode(
@@ -55,6 +54,10 @@ func (p *pendingAttestation) decode(
 	ret := *p
 	ret.uri = string(uri)
 	return &ret, nil
+}
+
+func (p *pendingAttestation) encode(ctx *serializationContext) error {
+	return ctx.writeVarBytes([]byte(p.uri))
 }
 
 func (p *pendingAttestation) String() string {
@@ -76,10 +79,6 @@ func (b *BitcoinAttestation) String() string {
 	return fmt.Sprintf("VERIFY BitcoinAttestation(height=%d)", b.Height)
 }
 
-func (b *BitcoinAttestation) match(tag []byte) bool {
-	return b.baseAttestation.match(tag)
-}
-
 func (b *BitcoinAttestation) decode(
 	ctx *deserializationContext,
 ) (Attestation, error) {
@@ -92,8 +91,13 @@ func (b *BitcoinAttestation) decode(
 	return &ret, nil
 }
 
+func (b *BitcoinAttestation) encode(ctx *serializationContext) error {
+	return ctx.writeVarUint(uint64(b.Height))
+}
+
 const hashMerkleRootSize = 32
 
+//
 func (b *BitcoinAttestation) VerifyAgainstBlockHash(
 	digest, blockHash []byte,
 ) error {
@@ -111,15 +115,19 @@ func (b *BitcoinAttestation) VerifyAgainstBlockHash(
 
 // This is a catch-all for when we don't know how to parse it
 type unknownAttestation struct {
-	tag   []byte
-	bytes []byte
+	tagBytes []byte
+	bytes    []byte
 }
 
-func (u unknownAttestation) match(tag []byte) bool {
+func (u unknownAttestation) tag() []byte {
+	return u.tagBytes
+}
+
+func (unknownAttestation) decode(*deserializationContext) (Attestation, error) {
 	panic("not implemented")
 }
 
-func (u unknownAttestation) decode(*deserializationContext) (Attestation, error) {
+func (unknownAttestation) encode(*serializationContext) error {
 	panic("not implemented")
 }
 
@@ -130,6 +138,17 @@ func (u unknownAttestation) String() string {
 var attestations []Attestation = []Attestation{
 	newPendingAttestation(),
 	newBitcoinAttestation(),
+}
+
+func encodeAttestation(ctx *serializationContext, att Attestation) error {
+	if err := ctx.writeBytes(att.tag()); err != nil {
+		return err
+	}
+	buf := &bytes.Buffer{}
+	if err := att.encode(&serializationContext{buf}); err != nil {
+		return err
+	}
+	return ctx.writeVarBytes(buf.Bytes())
 }
 
 func ParseAttestation(ctx *deserializationContext) (Attestation, error) {
@@ -149,7 +168,7 @@ func ParseAttestation(ctx *deserializationContext) (Attestation, error) {
 	)
 
 	for _, a := range attestations {
-		if a.match(tag) {
+		if bytes.Equal(tag, a.tag()) {
 			att, err := a.decode(attCtx)
 			if err != nil {
 				return nil, err

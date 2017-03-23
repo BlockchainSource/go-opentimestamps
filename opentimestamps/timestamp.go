@@ -9,10 +9,12 @@ import (
 
 type dumpConfig struct {
 	showMessage bool
+	showFlat    bool
 }
 
 var defaultDumpConfig dumpConfig = dumpConfig{
 	showMessage: true,
+	showFlat:    false,
 }
 
 // A timestampLink with the opCode being the link edge. The reference
@@ -39,6 +41,47 @@ func (t *Timestamp) Walk(f func(t *Timestamp)) {
 	}
 }
 
+func (t *Timestamp) encode(ctx *serializationContext) error {
+	n := len(t.Attestations) + len(t.ops)
+	if n == 0 {
+		return fmt.Errorf("cannot encode empty timestamp")
+	}
+	prefixAtt := []byte{0x00}
+	prefixOp := []byte{}
+	nextNode := func(prefix []byte) error {
+		n -= 1
+		if n > 0 {
+			return ctx.writeByte(0xff)
+		}
+		if len(prefix) > 0 {
+			return ctx.writeBytes(prefix)
+		}
+		return nil
+	}
+	// FIXME attestations should be sorted
+	for _, att := range t.Attestations {
+		if err := nextNode(prefixAtt); err != nil {
+			return err
+		}
+		if err := encodeAttestation(ctx, att); err != nil {
+			return err
+		}
+	}
+	// FIXME ops should be sorted
+	for _, op := range t.ops {
+		if err := nextNode(prefixOp); err != nil {
+			return err
+		}
+		if err := op.opCode.encode(ctx); err != nil {
+			return err
+		}
+		if err := op.timestamp.encode(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (t *Timestamp) DumpIndent(w io.Writer, indent int, cfg dumpConfig) {
 	if cfg.showMessage {
 		fmt.Fprintf(w, strings.Repeat(" ", indent))
@@ -49,15 +92,14 @@ func (t *Timestamp) DumpIndent(w io.Writer, indent int, cfg dumpConfig) {
 		fmt.Fprintln(w, att)
 	}
 
-	// if the timestamp is indeed tree-shaped, show it like that
-	if len(t.ops) > 1 {
-		indent += 1
-	}
-
 	for _, tsLink := range t.ops {
 		fmt.Fprint(w, strings.Repeat(" ", indent))
 		fmt.Fprintln(w, tsLink.opCode)
-		fmt.Fprint(w, strings.Repeat(" ", indent))
+		// fmt.Fprint(w, strings.Repeat(" ", indent))
+		// if the timestamp is indeed tree-shaped, show it like that
+		if !cfg.showFlat || len(t.ops) > 1 {
+			indent += 1
+		}
 		tsLink.timestamp.DumpIndent(w, indent, cfg)
 	}
 }
