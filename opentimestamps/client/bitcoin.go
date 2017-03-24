@@ -15,6 +15,12 @@ type BitcoinAttestationVerifier struct {
 	btcrpcClient *btcrpcclient.Client
 }
 
+func NewBitcoinAttestationVerifier(
+	c *btcrpcclient.Client,
+) *BitcoinAttestationVerifier {
+	return &BitcoinAttestationVerifier{c}
+}
+
 // VerifyAttestation checks a BitcoinAttestation using a given hash digest. It
 // returns the time of the block if the verification succeeds, an error
 // otherwise.
