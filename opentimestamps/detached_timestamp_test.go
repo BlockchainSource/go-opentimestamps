@@ -2,10 +2,19 @@ package opentimestamps
 
 import (
 	"encoding/hex"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func examplePaths() []string {
+	matches, err := filepath.Glob("../examples/*ots")
+	if err != nil {
+		panic(err)
+	}
+	return matches
+}
 
 func TestDecodeHelloWorld(t *testing.T) {
 	dts, err := NewDetachedTimestampFromPath(
@@ -39,4 +48,11 @@ func TestDecodeHelloWorld(t *testing.T) {
 	})
 
 	assert.Equal(t, 1, attCount)
+}
+
+func TestDecodeAll(t *testing.T) {
+	for _, path := range examplePaths() {
+		_, err := NewDetachedTimestampFromPath(path)
+		assert.NoError(t, err)
+	}
 }
