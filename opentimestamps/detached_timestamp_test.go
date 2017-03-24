@@ -3,6 +3,7 @@ package opentimestamps
 import (
 	"bytes"
 	"encoding/hex"
+	"io/ioutil"
 	"path/filepath"
 	"testing"
 
@@ -80,11 +81,30 @@ func TestDecodeEncodeAll(t *testing.T) {
 		}
 
 		buf = bytes.NewBuffer(buf.Bytes())
-		_, err = NewTimestampFromReader(buf, dts.Timestamp.Message)
+		ts1, err := NewTimestampFromReader(buf, dts.Timestamp.Message)
 		if !assert.NoError(t, err, path) {
 			continue
 		}
 
+		dts1, err := NewDetachedTimestamp(
+			dts.HashOp, dts.FileHash, ts1,
+		)
+		if !assert.NoError(t, err) {
+			continue
+		}
+
+		dts1Target := &bytes.Buffer{}
+		err = dts1.WriteToStream(dts1Target)
+		if !assert.NoError(t, err) {
+			continue
+		}
+
+		orgBytes, err := ioutil.ReadFile(path)
+		if !assert.NoError(t, err) {
+			continue
+		}
+
+		assert.Equal(t, orgBytes, dts1Target.Bytes())
 		t.Log("encode cycle success")
 	}
 }

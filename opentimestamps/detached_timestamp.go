@@ -30,6 +30,25 @@ func (d *DetachedTimestamp) Dump() string {
 	return w.String()
 }
 
+func (d *DetachedTimestamp) encode(ctx *serializationContext) error {
+	if err := ctx.writeBytes(fileHeaderMagic); err != nil {
+		return err
+	}
+	if err := ctx.writeVarUint(fileMajorVersion); err != nil {
+		return err
+	}
+	if err := d.HashOp.encode(ctx); err != nil {
+		return err
+	}
+	if err := ctx.writeBytes(d.FileHash); err != nil {
+		return err
+	}
+	return d.Timestamp.encode(ctx)
+}
+
+func (d *DetachedTimestamp) WriteToStream(w io.Writer) error {
+	return d.encode(&serializationContext{w})
+}
 
 func NewDetachedTimestamp(
 	hashOp cryptOp, fileHash []byte, ts *Timestamp,
