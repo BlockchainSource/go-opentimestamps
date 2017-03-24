@@ -29,7 +29,7 @@ func (d *DetachedTimestamp) Dump() string {
 	return w.String()
 }
 
-func NewDetachedTimestamp(r io.Reader) (*DetachedTimestamp, error) {
+func NewDetachedTimestampFromReader(r io.Reader) (*DetachedTimestamp, error) {
 	ctx := newDeserializationContext(r)
 	if err := ctx.assertMagic([]byte(fileHeaderMagic)); err != nil {
 		return nil, err
@@ -63,5 +63,5 @@ func NewDetachedTimestampFromPath(p string) (*DetachedTimestamp, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewDetachedTimestamp(f)
+	return NewDetachedTimestampFromReader(f)
 }
