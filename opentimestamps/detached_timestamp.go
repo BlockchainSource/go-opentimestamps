@@ -17,6 +17,7 @@ const fileMajorVersion = 1
 
 type DetachedTimestamp struct {
 	HashOp    cryptOp
+	FileHash  []byte
 	Timestamp *Timestamp
 }
 
@@ -27,6 +28,19 @@ func (d *DetachedTimestamp) Dump() string {
 	)
 	fmt.Fprint(w, d.Timestamp.Dump())
 	return w.String()
+}
+
+
+func NewDetachedTimestamp(
+	hashOp cryptOp, fileHash []byte, ts *Timestamp,
+) (*DetachedTimestamp, error) {
+	if len(fileHash) != hashOp.digestLength {
+		return nil, fmt.Errorf(
+			"op %v expects %d byte digest, got %d",
+			hashOp, hashOp.digestLength, len(fileHash),
+		)
+	}
+	return &DetachedTimestamp{hashOp, fileHash, ts}, nil
 }
 
 func NewDetachedTimestampFromReader(r io.Reader) (*DetachedTimestamp, error) {
@@ -53,9 +67,7 @@ func NewDetachedTimestampFromReader(r io.Reader) (*DetachedTimestamp, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DetachedTimestamp{
-		*fileHashOp, ts,
-	}, nil
+	return &DetachedTimestamp{*fileHashOp, fileHash, ts}, nil
 }
 
 func NewDetachedTimestampFromPath(p string) (*DetachedTimestamp, error) {
