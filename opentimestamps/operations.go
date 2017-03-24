@@ -11,27 +11,27 @@ import (
 
 const maxResultLength = 4096
 
-type unaryStackOp func(message []byte) ([]byte, error)
-type binaryStackOp func(message, argument []byte) ([]byte, error)
+type unaryMsgOp func(message []byte) ([]byte, error)
+type binaryMsgOp func(message, argument []byte) ([]byte, error)
 
-// opAppend returns the concatenation of msg and arg
-func opAppend(msg, arg []byte) (res []byte, err error) {
+// msgAppend returns the concatenation of msg and arg
+func msgAppend(msg, arg []byte) (res []byte, err error) {
 	res = append(res, msg...)
 	res = append(res, arg...)
 	return
 }
 
-// opPrepend returns the concatenation of arg and msg
-func opPrepend(msg, arg []byte) (res []byte, err error) {
+// msgPrepend returns the concatenation of arg and msg
+func msgPrepend(msg, arg []byte) (res []byte, err error) {
 	res = append(res, arg...)
 	res = append(res, msg...)
 	return
 }
 
-// opReverse returns the reversed msg. Deprecated.
-func opReverse(msg []byte) ([]byte, error) {
+// msgReverse returns the reversed msg. Deprecated.
+func msgReverse(msg []byte) ([]byte, error) {
 	if len(msg) == 0 {
-		return nil, fmt.Errorf("empty input invalid for opReverse")
+		return nil, fmt.Errorf("empty input invalid for msgReverse")
 	}
 	res := make([]byte, len(msg))
 	for i, b := range msg {
@@ -40,19 +40,19 @@ func opReverse(msg []byte) ([]byte, error) {
 	return res, nil
 }
 
-func opHexlify(msg []byte) ([]byte, error) {
+func msgHexlify(msg []byte) ([]byte, error) {
 	if len(msg) == 0 {
-		return nil, fmt.Errorf("empty input invalid for opHexlify")
+		return nil, fmt.Errorf("empty input invalid for msgHexlify")
 	}
 	return []byte(hex.EncodeToString(msg)), nil
 }
 
-func opSHA1(msg []byte) ([]byte, error) {
+func msgSHA1(msg []byte) ([]byte, error) {
 	res := sha1.Sum(msg)
 	return res[:], nil
 }
 
-func opRIPEMD160(msg []byte) ([]byte, error) {
+func msgRIPEMD160(msg []byte) ([]byte, error) {
 	h := ripemd160.New()
 	_, err := h.Write(msg)
 	if err != nil {
@@ -61,7 +61,7 @@ func opRIPEMD160(msg []byte) ([]byte, error) {
 	return h.Sum([]byte{}), nil
 }
 
-func opSHA256(msg []byte) ([]byte, error) {
+func msgSHA256(msg []byte) ([]byte, error) {
 	res := sha256.Sum256(msg)
 	return res[:], nil
 }
@@ -84,11 +84,11 @@ func (o op) match(tag byte) bool {
 
 type unaryOp struct {
 	op
-	stackOp unaryStackOp
+	msgOp unaryMsgOp
 }
 
-func newUnaryOp(tag byte, name string, stackOp unaryStackOp) *unaryOp {
-	return &unaryOp{op{tag: tag, name: name}, stackOp}
+func newUnaryOp(tag byte, name string, msgOp unaryMsgOp) *unaryOp {
+	return &unaryOp{op{tag: tag, name: name}, msgOp}
 }
 
 func (u *unaryOp) String() string {
@@ -105,7 +105,7 @@ func (u *unaryOp) encode(ctx *serializationContext) error {
 }
 
 func (u *unaryOp) apply(message []byte) ([]byte, error) {
-	return u.stackOp(message)
+	return u.msgOp(message)
 }
 
 // Crypto operations
@@ -116,10 +116,10 @@ type cryptOp struct {
 }
 
 func newCryptOp(
-	tag byte, name string, stackOp unaryStackOp, digestLength int,
+	tag byte, name string, msgOp unaryMsgOp, digestLength int,
 ) *cryptOp {
 	return &cryptOp{
-		unaryOp:      *newUnaryOp(tag, name, stackOp),
+		unaryOp:      *newUnaryOp(tag, name, msgOp),
 		digestLength: digestLength,
 	}
 }
@@ -137,14 +137,14 @@ func (c *cryptOp) decode(ctx *deserializationContext) (opCode, error) {
 
 type binaryOp struct {
 	op
-	stackOp  binaryStackOp
+	msgOp    binaryMsgOp
 	argument []byte
 }
 
-func newBinaryOp(tag byte, name string, stackOp binaryStackOp) *binaryOp {
+func newBinaryOp(tag byte, name string, msgOp binaryMsgOp) *binaryOp {
 	return &binaryOp{
 		op:       op{tag: tag, name: name},
-		stackOp:  stackOp,
+		msgOp:    msgOp,
 		argument: nil,
 	}
 }
@@ -170,21 +170,26 @@ func (b *binaryOp) encode(ctx *serializationContext) error {
 }
 
 func (b *binaryOp) apply(message []byte) ([]byte, error) {
-	return b.stackOp(message, b.argument)
+	return b.msgOp(message, b.argument)
 }
 
 func (b *binaryOp) String() string {
 	return fmt.Sprintf("%s %x", b.name, b.argument)
 }
 
+var (
+	opAppend    = newBinaryOp(0xf0, "APPEND", msgAppend)
+	opPrepend   = newBinaryOp(0xf1, "PREPEND", msgPrepend)
+	opReverse   = newUnaryOp(0xf2, "REVERSE", msgReverse)
+	opHexlify   = newUnaryOp(0xf3, "HEXLIFY", msgHexlify)
+	opSHA1      = newCryptOp(0x02, "SHA1", msgSHA1, 20)
+	opRIPEMD160 = newCryptOp(0x03, "RIPEMD160", msgRIPEMD160, 20)
+	opSHA256    = newCryptOp(0x08, "SHA256", msgSHA256, 32)
+)
+
 var opCodes []opCode = []opCode{
-	newBinaryOp(0xf0, "APPEND", opAppend),
-	newBinaryOp(0xf1, "PREPEND", opPrepend),
-	newUnaryOp(0xf2, "REVERSE", opReverse),
-	newUnaryOp(0xf3, "HEXLIFY", opHexlify),
-	newCryptOp(0x02, "SHA1", opSHA1, 20),
-	newCryptOp(0x03, "RIPEMD160", opRIPEMD160, 20),
-	newCryptOp(0x08, "SHA256", opSHA256, 32),
+	opAppend, opPrepend, opReverse, opHexlify, opSHA1, opRIPEMD160,
+	opSHA256,
 }
 
 func parseOp(ctx *deserializationContext, tag byte) (opCode, error) {
